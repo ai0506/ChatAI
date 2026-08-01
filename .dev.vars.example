@@ -1,0 +1,10 @@
+CHAT_PASSWORD="replace-with-a-long-private-password"
+CHAT_SESSION_SECRET="replace-with-a-long-random-secret"
+DASHSCOPE_API_KEY="replace-with-bailian-api-key"
+CALENDAR_TOKEN_ENCRYPTION_KEY="replace-with-a-long-random-secret"
+# Optional; use your Beijing workspace-compatible endpoint if required.
+QWEN_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+QWEN_MODEL="qwen-plus"
+CALENDAR_MCP_URL="https://calendar.ai0506.com/mcp"
+CALENDAR_OAUTH_ISSUER="https://calendar.ai0506.com"
+# Set MOCK_AI="true" locally to test chat without a real API Key.

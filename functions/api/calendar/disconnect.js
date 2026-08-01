@@ -1,0 +1,2 @@
+import { json, requireSameOrigin, requireUser, run, fail } from "../../_lib/app.js";
+export async function onRequestPost({ request, env }) { const auth = await requireUser(request, env); if (auth.response) return auth.response; if (!requireSameOrigin(request)) return fail("forbidden", "来源不正确", 403); await run(env.DB, "DELETE FROM calendar_connections WHERE owner_id = ?", [auth.user]); return json({ connected: false }); }

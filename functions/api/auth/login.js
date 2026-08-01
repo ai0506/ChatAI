@@ -1,0 +1,2 @@
+import { createSession, fail, json, readJson, safeEqual, sessionHeader } from "../../_lib/app.js";
+export async function onRequestPost({ request, env }) { const body = await readJson(request); if (!body || !env.CHAT_PASSWORD || !env.CHAT_SESSION_SECRET || !safeEqual(body.password, env.CHAT_PASSWORD)) return fail("invalid_password", "密码错误", 401); const token = await createSession(env.CHAT_SESSION_SECRET); return json({ authenticated: true }, 200, { "Set-Cookie": sessionHeader(token) }); }
