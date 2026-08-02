@@ -1,5 +1,5 @@
 const OWNER_ID = "owner";
-const SESSION_COOKIE = "chatai_session";
+const SESSION_COOKIE = "chatai_session_v2";
 const MAX_MESSAGE_LENGTH = 12000;
 const MAX_CONTEXT_MESSAGES = 20;
 const encoder = new TextEncoder();
@@ -19,8 +19,8 @@ export function safeEqual(a, b) { if (typeof a !== "string" || typeof b !== "str
 
 export async function createSession(secret) { const payload = b64url(encoder.encode(JSON.stringify({ sub: OWNER_ID, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30 }))); return `${payload}.${await hmac(payload, secret)}`; }
 export async function currentUser(request, env) { const token = request.headers.get("Cookie")?.split(";").map(x => x.trim()).find(x => x.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1); if (!token || !env.CHAT_SESSION_SECRET) return null; const dot = token.lastIndexOf("."); if (dot < 0 || !safeEqual(token.slice(dot + 1), await hmac(token.slice(0, dot), env.CHAT_SESSION_SECRET))) return null; try { const payload = JSON.parse(new TextDecoder().decode(fromB64url(token.slice(0, dot)))); return payload.sub === OWNER_ID && payload.exp > Math.floor(Date.now() / 1000) ? OWNER_ID : null; } catch { return null; } }
-export const sessionHeader = token => `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`;
-export const clearSessionHeader = () => `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+export const sessionHeader = (token, secure = true) => `${SESSION_COOKIE}=${token}; Path=/; HttpOnly;${secure ? " Secure;" : ""} SameSite=Lax; Max-Age=2592000`;
+export const clearSessionHeader = (secure = true) => `${SESSION_COOKIE}=; Path=/; HttpOnly;${secure ? " Secure;" : ""} SameSite=Lax; Max-Age=0`;
 export async function requireUser(request, env) { const user = await currentUser(request, env); return user ? { user } : { response: fail("unauthorized", "请先登录", 401) }; }
 export function requireSameOrigin(request) { const origin = request.headers.get("Origin"); return !origin || origin === new URL(request.url).origin; }
 export async function readJson(request) { try { return await request.json(); } catch { return null; } }

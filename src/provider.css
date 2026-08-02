@@ -1,7 +1,291 @@
-.key-form select {
-  background: #111827;
-  color: #fff;
-  border: 1px solid #4b5563;
+/* ==========================================================================
+   模型与 API 设置面板
+   界面本身保持无彩，只有供应商官方 logo 允许带颜色
+   ========================================================================== */
+
+.provider-logo {
+  position: relative;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   border-radius: 8px;
-  padding: 10px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+.provider-logo.small {
+  flex-basis: 25px;
+  width: 25px;
+  height: 25px;
+  border-radius: 7px;
+  font-size: 9px;
+}
+.provider-logo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #fff;
+}
+.provider-logo b {
+  position: relative;
+  font: inherit;
+}
+
+/* --- 已保存的配置 --- */
+
+.profile-list {
+  display: grid;
+  gap: 4px;
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  transition: background var(--fast);
+}
+.profile-card:hover {
+  background: var(--surface-2);
+}
+.profile-card.active {
+  background: var(--surface-2);
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+.profile-info strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.profile-info span {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.profile-actions .switch {
+  padding: 5px 11px;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 12px;
+  transition: background var(--fast);
+}
+.profile-actions .switch:hover {
+  background: var(--border-strong);
+}
+
+/* 编辑/删除的槽位常驻，只切 opacity —— hover 时配置名不会被挤动 */
+.profile-icons {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--fast);
+}
+.profile-card:hover .profile-icons,
+.profile-card:focus-within .profile-icons {
+  opacity: 1;
+  pointer-events: auto;
+}
+.profile-icons button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--text-3);
+  transition: color var(--fast);
+}
+.profile-icons button:hover {
+  color: var(--text);
+}
+.profile-icons button.danger:hover {
+  color: var(--danger);
+}
+
+.active-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: var(--r-full);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 11.5px;
+}
+
+.empty-profile {
+  padding: 14px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.list-error {
+  margin-top: 12px;
+}
+
+.add-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13.5px;
+  transition: background var(--fast), color var(--fast);
+}
+.add-profile:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+/* --- 添加 / 编辑表单 --- */
+
+.key-form {
+  padding-bottom: 4px;
+}
+
+.provider-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.provider-tile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: var(--r-md);
+  color: var(--text-2);
+  font-size: 12.5px;
+  text-align: left;
+  transition: background var(--fast), color var(--fast);
+}
+.provider-tile span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.provider-tile:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+/* 选中态只换背景，不改字重 —— 否则供应商名的宽度会变 */
+.provider-tile.selected {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.selected-provider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.selected-provider > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.selected-provider strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+}
+.selected-provider span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.provider-links {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+.provider-links a {
+  padding: 5px 10px;
+  border-radius: var(--r-full);
+  color: var(--text-2);
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background var(--fast), color var(--fast);
+}
+.provider-links a:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+  margin-top: 18px;
+}
+.form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.key-form .btn-primary {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.model-catalog-action { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 10px; min-height: 72px; margin-top: 2px; color: var(--text-2); font-size: 12px; }
+.catalog-button { border: 0; border-radius: 9px; padding: 8px 11px; background: var(--surface-strong); color: var(--text); cursor: pointer; font: inherit; white-space: nowrap; }
+.catalog-button:disabled { opacity: .55; cursor: default; }
+.model-options { grid-column: 1 / -1; display: flex; gap: 6px; min-height: 30px; overflow-x: auto; scrollbar-width: thin; }
+.model-options button { flex: 0 0 auto; max-width: 230px; min-height: 30px; padding: 0 10px; overflow: hidden; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-2); font-family: var(--font-mono); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; transition: background var(--fast), color var(--fast); }
+.model-options button:hover, .model-options button.selected { background: var(--surface-3); color: var(--text); }
+
+/* 报错固定在按钮上方，出现时不改变面板高度感知 */
+.key-form .error {
+  margin-top: 14px;
+}
+
+@media (max-width: 860px) {
+  .provider-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .selected-provider {
+    flex-wrap: wrap;
+  }
 }

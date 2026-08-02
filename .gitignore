@@ -4,3 +4,5 @@ dist/
 .playwright-cli/
 .dev.vars
 *.local
+.claude/
+.codex-local-logs/

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+        <meta name="renderer" content="webkit">
+        <title>百度智能云-登录</title>
+        <script type="text/javascript" src="https://cas.baidu.com/staticv2/dep/common-login/api.js"></script>
+        <script type="text/javascript" src="https://passport.baidu.com/passApi/js/wrapper.js?_=1785590945515"></script>
+        <script type="text/javascript" src="https://code.bdstatic.com/npm/jquery@3.5.0/dist/jquery.min.js"></script>
+        <!--[if lt IE 9]>
+        <script>for(var i=0,t="abbr, article, aside, audio, canvas, datalist, details, dialog, eventsource, figure, footer, header, hgroup, mark, menu, meter, nav, output, progress, section, time, video, figcaption, main".split(", ");i<t.length;i++){document.createElement(t[i]);}</script>
+        <![endif]-->
+        <script>
+            window.__inputData__ = {
+                error: "${error}",
+                cookieDomain: ".bce.baidu.com",
+                fromUrl: "http://console.bce.baidu.com/favicon.ico",
+                passportRegUrl: "https://passport.baidu.com/v2/?reg&u=",
+                timeStamp: "1785590945515"
+            };
+        </script>
+    </head>
+    <body>
+    </body>
+    <script src="https://bce.bdstatic.com/fe-static/baidu/bce-console/console-login-frontend/online/load-pc.js"></script>
+</html>

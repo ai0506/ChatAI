@@ -1,6 +1,9 @@
 CHAT_PASSWORD="replace-with-a-long-private-password"
 CHAT_SESSION_SECRET="replace-with-a-long-random-secret"
 DASHSCOPE_API_KEY="replace-with-bailian-api-key"
+# System-only automatic conversation titles. This key is never shown in the UI.
+ZHIPU_API_KEY="replace-with-zhipu-api-key"
+ZHIPU_MODEL="glm-4-flash-250414"
 CALENDAR_TOKEN_ENCRYPTION_KEY="replace-with-a-long-random-secret"
 # Optional; use your Beijing workspace-compatible endpoint if required.
 QWEN_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"

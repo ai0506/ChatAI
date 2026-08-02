@@ -8,7 +8,7 @@
     "dev:local": "npm run build && wrangler pages dev dist --local --port 8788",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "npm run build && node --check functions/_lib/app.js && node --check functions/_lib/providers.js && node --check functions/_lib/qwen.js && node --check functions/api/chat.js && node tests/app.test.mjs && node tests/providers.test.mjs",
+    "check": "npm run build && node --check functions/_lib/app.js && node --check functions/_lib/providers.js && node --check functions/_lib/qwen.js && node --check functions/_lib/title.js && node --check functions/api/chat.js && node tests/app.test.mjs && node tests/providers.test.mjs",
     "db:local": "wrangler d1 migrations apply chatai-db --local",
     "db:remote": "wrangler d1 migrations apply chatai-db --remote",
     "deploy": "npm run build && wrangler pages deploy dist --project-name=chatai"
