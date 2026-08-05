@@ -33,8 +33,8 @@
   /* 语义色只留两个，且都压到很低的饱和度 */
   --danger: #b3261e;
   --danger-soft: rgba(179, 38, 30, 0.07);
+  --on-danger: #ffffff;
   --ok: #4f7a5c;
-  --ok-soft: rgba(79, 122, 92, 0.1);
 
   --r-xs: 6px;
   --r-sm: 10px;
@@ -82,8 +82,9 @@
 
   --danger: #e08079;
   --danger-soft: rgba(224, 128, 121, 0.1);
+  /* 深色下的 danger 是浅红，配白字对比度不够，改用底色 */
+  --on-danger: #1b1a18;
   --ok: #7ea88b;
-  --ok-soft: rgba(126, 168, 139, 0.12);
 
   --shadow-modal: 0 28px 70px rgba(0, 0, 0, 0.6), 0 3px 10px rgba(0, 0, 0, 0.4);
 
@@ -223,11 +224,12 @@ a:hover {
 
 /* ===== 加载 / 登录 ========================================================= */
 
+/* --text-3 只留给分组标签和 meta，正文说明用 --text-2，否则对比度不够 */
 .loading {
   height: 100vh;
   display: grid;
   place-items: center;
-  color: var(--text-3);
+  color: var(--text-2);
   font-size: 14px;
 }
 
@@ -258,8 +260,11 @@ a:hover {
   width: 100%;
   margin-top: 18px;
 }
+/* 报错槽位常驻在按钮之下，高度固定 —— 密码错时按钮和输入框都不会被顶动。
+   40px = 报错框单行实高（13px × 1.5 行高 + 上下各 10px 内边距 = 39.5）向上取整 */
 .login-error {
-  margin-top: 14px;
+  min-height: 40px;
+  margin-top: 12px;
 }
 
 /* ===== 主框架 ============================================================== */
@@ -340,22 +345,27 @@ a:hover {
   padding-top: 4px;
 }
 
+/* 左内边距挪进标题按钮里，让整行左侧都可点 */
 .conversation {
   gap: 4px;
   margin-bottom: 1px;
-  padding-right: 6px;
-  cursor: pointer;
+  padding: 0 6px 0 0;
 }
 /* 选中态只换背景 —— 不改字重，否则标题宽度会变 */
 .conversation.active {
   background: var(--surface-3);
   color: var(--text);
 }
-.conversation > span {
+.conversation-open {
   flex: 1;
   min-width: 0;
+  height: 100%;
+  padding: 0 0 0 10px;
   overflow: hidden;
+  color: inherit;
+  font-size: inherit;
   white-space: nowrap;
+  text-align: left;
   text-overflow: ellipsis;
 }
 
@@ -393,6 +403,8 @@ a:hover {
   flex: 1;
   min-width: 0;
   height: 26px;
+  /* 3px + 自身 7px 内边距 ≈ 标题按钮的 10px，进入重命名时文字不会左右挪 */
+  margin-left: 3px;
   padding: 0 7px;
   border: 0;
   border-radius: var(--r-xs);
@@ -434,14 +446,23 @@ a:hover {
   font-size: 11.5px;
   text-align: right;
 }
+/* 槽位宽度和另外两行的图标一致（14px），否则「模型与 API」的文字会比
+   「Calendar」「退出登录」左移 8px，三行对不齐 */
 .status-dot {
-  flex: 0 0 6px;
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+}
+.status-dot::before {
+  content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--ok);
 }
-.status-dot.off {
+.status-dot.off::before {
   background: var(--text-3);
 }
 
@@ -594,10 +615,13 @@ a:hover {
   word-break: break-word;
 }
 
-/* 操作条：固定高度槽位。AI 消息常驻可见，用户消息 hover 显形，都不推动布局 */
+/* 操作条：固定高度槽位，每条消息都有。
+   AI 消息流式期间装状态指示、结束后换成复制键；用户消息 hover 显形。
+   任何状态下高度都是 26 + 6，所以正文位置全程不动。 */
 .message-tools {
   height: 26px;
   display: flex;
+  align-items: center;
   gap: 2px;
   margin-top: 6px;
   transition: opacity var(--fast);
@@ -626,20 +650,73 @@ a:hover {
   color: var(--text);
 }
 
-/* 流式回复开始后，用轻量跳点提示仍在生成，替代突兀的终端光标。 */
-.typing-dots { display: inline-flex; align-items: center; gap: 3px; height: 16px; margin-left: 7px; vertical-align: middle; }
-.typing-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--text-3); animation: typing-dot 1s ease-in-out infinite; }
-.typing-dots i:nth-child(2) { animation-delay: 0.14s; }
-.typing-dots i:nth-child(3) { animation-delay: 0.28s; }
-@keyframes typing-dot { 50% { opacity: .25; transform: translateY(-2px); } }
+/* 生成中的三点。只淡入淡出，不做位移跳动 */
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 100%;
+  padding-left: 3px;
+}
+.typing-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-3);
+  animation: typing-dot 1s ease-in-out infinite;
+}
+.typing-dots i:nth-child(2) {
+  animation-delay: 0.14s;
+}
+.typing-dots i:nth-child(3) {
+  animation-delay: 0.28s;
+}
+@keyframes typing-dot {
+  50% {
+    opacity: 0.25;
+  }
+}
 
-/* 思考过程只在进行中或失败时显示一行状态，不用卡片抢占回复本身。 */
-.activity-status { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px; min-height: 20px; margin: 0 0 12px; color: var(--text-2); font-size: 12.5px; line-height: 1.45; }
-.activity-pulse, .activity-state { flex: 0 0 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); }
-.activity-status.is-running .activity-pulse { background: var(--text); animation: activity-pulse 1.2s ease-in-out infinite; }
-.activity-status.is-error .activity-pulse { background: var(--danger); }
-.activity-detail { color: var(--text-2); }
-@keyframes activity-pulse { 50% { opacity: .35; } }
+/* 执行状态只在进行中或失败时占用同一格，不额外起卡片抢占回复本身 */
+.activity-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  height: 100%;
+  padding-left: 3px;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+.activity-pulse {
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.activity-status.is-running .activity-pulse {
+  background: var(--text);
+  animation: activity-pulse 1.2s ease-in-out infinite;
+}
+.activity-status.is-error .activity-pulse {
+  background: var(--danger);
+}
+.activity-label,
+.activity-detail {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.activity-detail {
+  color: var(--text-3);
+}
+@keyframes activity-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
 
 /* --- 输入区 --- */
 
@@ -659,6 +736,86 @@ a:hover {
 /* 错误提示浮在输入框上方，不改变输入框位置 */
 .composer-error {
   margin-bottom: 8px;
+}
+
+/* 工具条：Calendar 是第一个接入的工具，联网搜索先占位不可点。
+   未来新增工具只需在这一行里再加一个 .tool-item，布局不用改 */
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 8px;
+}
+.tool-item {
+  position: relative;
+}
+.tool-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  transition: background var(--fast), color var(--fast);
+}
+.tool-button:hover {
+  background: var(--surface-2);
+}
+/* 强制开启：和思考模式一致的墨色反色，全站统一「启用中」的样子 */
+.tool-button.on {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+.tool-button.on:hover {
+  background: var(--ink-hover);
+}
+/* 强制关闭：只压暗颜色，不引入新色相 */
+.tool-button.off {
+  color: var(--text-3);
+}
+.tool-button.disabled {
+  color: var(--text-3);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tool-button.disabled:hover {
+  background: transparent;
+}
+
+/* 全屏透明蒙层，点击空白处关闭菜单，不带视觉本身 */
+.tool-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.tool-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  min-width: 112px;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-modal);
+}
+.tool-menu button {
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text-2);
+  font-size: 13px;
+  text-align: left;
+  transition: background var(--fast), color var(--fast);
+}
+.tool-menu button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.tool-menu button.on {
+  background: var(--surface-3);
+  color: var(--text);
 }
 
 /* 输入框靠填充色成形，没有描边也没有阴影 */
@@ -707,12 +864,19 @@ a:hover {
   font-size: 12.5px;
   transition: background var(--fast), color var(--fast);
 }
+/* 由左侧开关吃掉剩余空间，模型选择器和发送键始终贴右。
+   不能把 margin-left:auto 挂在模型选择器上 —— 它一旦隐藏，发送键就会跑到左边 */
+.toggle-pill {
+  margin-right: auto;
+}
+/* hover 只提亮文字，不加填充 —— 填充专门留给「已开启」，两者才不会看混 */
 .toggle-pill:hover,
 .model-pill:hover {
-  background: var(--surface-3);
   color: var(--text);
 }
-/* 开启态直接反色，和关闭态拉开距离 —— 深浅两套主题都一眼可辨 */
+/* 开启态用 --ink 反色，和其它「弱选中态」（会话高亮、主题切换）明显拉开——
+   思考模式改的是本轮回复的行为，用户需要一眼确认「现在是不是开着的」，
+   不能和列表里普通的选中项混在一起看。全站唯一的反色块，就留给这一个语义。 */
 .toggle-pill.on {
   background: var(--ink);
   color: var(--on-ink);
@@ -725,7 +889,6 @@ a:hover {
 .model-pill {
   flex: 0 1 auto;
   min-width: 0;
-  margin-left: auto;
   font-size: 12px;
 }
 .model-pill span {
@@ -786,10 +949,11 @@ a:hover {
   box-shadow: var(--shadow-modal);
   animation: pop var(--base);
 }
+/* 只做很小的位移淡入，不做缩放 —— 大面板上的 scale 会显出「弹一下」的感觉 */
 @keyframes pop {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.99);
+    transform: translateY(6px);
   }
 }
 
@@ -857,10 +1021,21 @@ a:hover {
   color: var(--text);
 }
 
+/* 弹窗高度固定（子页之间不许变），列表内容又通常撑不满。
+   排成弹性列并让主操作吸底，空白就落在内容和按钮之间，
+   看起来是留白而不是一个半截空的面板。子项禁止收缩，超出时正常滚动。 */
 .modal-body {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 8px 24px 26px;
+}
+.modal-body > * {
+  flex: 0 0 auto;
+}
+.add-profile {
+  margin-top: auto;
 }
 
 .section-heading {
@@ -921,7 +1096,7 @@ a:hover {
 }
 .confirm-actions .destroy {
   background: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
 }
 .confirm-actions .destroy:hover {
   filter: brightness(1.08);
@@ -1098,11 +1273,13 @@ a:hover {
   .bubble {
     max-width: 88%;
   }
+  /* 窄屏下模型名更容易超长，交给省略号处理，不要整块藏掉 */
   .model-pill {
-    display: none;
+    max-width: 42vw;
   }
+  /* 写 max-height 会被基础规则的 height 覆盖，等于没生效；直接改 height */
   .modal {
-    max-height: 92vh;
+    height: min(92vh, 640px);
   }
   .modal-header,
   .modal-body {

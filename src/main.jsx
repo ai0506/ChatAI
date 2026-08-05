@@ -141,26 +141,54 @@ const IconCalendar = svg(
   </>,
   14,
 );
+const IconGlobe = svg(
+  <>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M3.5 12h17" />
+    <path d="M12 3.5a12 12 0 0 1 3.2 8.5 12 12 0 0 1-3.2 8.5 12 12 0 0 1-3.2-8.5A12 12 0 0 1 12 3.5z" />
+  </>,
+  14,
+);
 const IconLogout = svg(<path d="M15 17l5-5-5-5M20 12H9M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7" />, 14);
 
-function ActivityTrail({ activities = [] }) {
-  const active = activities.filter((item) => item.status === "running");
+/* 流式期间占用「消息操作条」那一格：有执行状态就显示状态，否则显示生成中的三点。
+   两种形态和结束后的复制键高度完全一致，所以整轮回复过程中回复正文不会上下跳。 */
+function StreamStatus({ activities = [] }) {
+  const running = activities.filter((item) => item.status === "running");
   const failed = activities.filter((item) => item.status === "error");
-  const current = active[active.length - 1] || failed[failed.length - 1];
-  if (!current) return null;
-  const running = current.status === "running";
+  const current = running[running.length - 1] || failed[failed.length - 1];
+
+  if (!current)
+    return (
+      <span className="typing-dots" role="status" aria-label="正在生成">
+        <i />
+        <i />
+        <i />
+      </span>
+    );
+
   return (
-    <div className={`activity-status ${running ? "is-running" : "is-error"}`} role="status">
+    <span
+      className={`activity-status ${current.status === "running" ? "is-running" : "is-error"}`}
+      role="status"
+    >
       <span className="activity-pulse" aria-hidden="true" />
-      <span>{current.label}</span>
+      <span className="activity-label">{current.label}</span>
       {current.detail && <span className="activity-detail">{current.detail}</span>}
-    </div>
+    </span>
   );
 }
 
 /* ===== 主题 =============================================================== */
 
 const THEME_KEY = "ai0506-theme";
+const CALENDAR_MODE_KEY = "ai0506-calendar-mode";
+// 未来新增的工具（联网搜索等）在这里注册即可；calendar 是第一个接入的工具。
+const TOOL_MODES = [
+  { value: "auto", label: "自动" },
+  { value: "on", label: "强制开启" },
+  { value: "off", label: "强制关闭" },
+];
 
 const resolveTheme = (mode) => {
   const dark =
@@ -232,6 +260,40 @@ function Confirm({ open, title, message, confirmText, onConfirm, onCancel }) {
   );
 }
 
+// 通用工具设置小菜单：位置绝对定位，不占布局空间，不会推动其它元素。
+function ToolMenu({ options, value, onChange, onClose }) {
+  useEscape(true, onClose);
+  return (
+    <>
+      <div
+        className="tool-menu-backdrop"
+        onMouseDown={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
+      />
+      <div
+        className="tool-menu"
+        role="menu"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="menuitemradio"
+            aria-checked={value === option.value}
+            className={value === option.value ? "on" : ""}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function ProviderLogo({ provider, small = false }) {
   const item = providerPresets[provider] || providerPresets.custom;
   const [broken, setBroken] = useState(false);
@@ -292,10 +354,11 @@ function Login({ onLogin }) {
             required
           />
         </label>
-        {error && <div className="error login-error">{error}</div>}
         <button className="btn-primary" disabled={loading}>
           {loading ? "正在进入…" : "进入工作台"}
         </button>
+        {/* 报错槽位常驻且在按钮之下 —— 出现时不会把输入框和按钮顶下去 */}
+        <div className="login-error">{error && <div className="error">{error}</div>}</div>
       </form>
     </main>
   );
@@ -738,6 +801,10 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [calendar, setCalendar] = useState(false);
+  const [calendarMode, setCalendarMode] = useState(
+    () => localStorage.getItem(CALENDAR_MODE_KEY) || "auto",
+  );
+  const [openToolMenu, setOpenToolMenu] = useState(null);
   const [error, setError] = useState("");
   const [showKeys, setShowKeys] = useState(false);
   const [drawer, setDrawer] = useState(false);
@@ -745,8 +812,9 @@ function App() {
   const [renameValue, setRenameValue] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [pendingCalendar, setPendingCalendar] = useState(false);
-  const [modelLabel, setModelLabel] = useState("");
-  const [modelShort, setModelShort] = useState("");
+  // 初值就用「未配置」，避免 /api/api-keys 取不到时留下空标签和一个绿色状态点
+  const [modelLabel, setModelLabel] = useState("未配置模型");
+  const [modelShort, setModelShort] = useState("未配置模型");
   const [copied, setCopied] = useState(null);
   const [theme, setTheme] = useTheme();
 
@@ -816,6 +884,10 @@ function App() {
     boot();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem(CALENDAR_MODE_KEY, calendarMode);
+  }, [calendarMode]);
+
   // 只有用户本来就贴着底部时才跟随滚动，且不使用平滑动画 —— 避免流式输出时画面抖动
   useEffect(() => {
     const pane = paneRef.current;
@@ -867,8 +939,7 @@ function App() {
     }
   };
 
-  const startRename = (item, event) => {
-    event.stopPropagation();
+  const startRename = (item) => {
     setRenaming(item.id);
     setRenameValue(item.title);
   };
@@ -933,7 +1004,12 @@ function App() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversation_id: id, message: text, thinking }),
+        body: JSON.stringify({
+          conversation_id: id,
+          message: text,
+          thinking,
+          tool_modes: { calendar: calendarMode },
+        }),
       });
       if (!response.ok || !response.body)
         throw new Error("AI 服务暂时不可用，请稍后重试。");
@@ -943,47 +1019,52 @@ function App() {
       let buffer = "";
       let answer = "";
 
+      const processEvent = (rawEvent) => {
+        const dataLine = rawEvent
+          .split("\n")
+          .find((entry) => entry.startsWith("data: "));
+        if (!dataLine) return;
+        const payload = JSON.parse(dataLine.slice(6));
+        if (payload.type === "delta") {
+          answer += payload.text;
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === "stream"
+                ? { ...message, content: answer }
+                : message,
+            ),
+          );
+        }
+        if (payload.type === "activity" && payload.activity) {
+          setMessages((current) => current.map((message) => {
+            if (message.id !== "stream") return message;
+            const activities = message.activities || [];
+            const previous = activities.findIndex((item) => item.id === payload.activity.id);
+            const next = previous === -1 ? [...activities, payload.activity] : activities.map((item, index) => index === previous ? { ...item, ...payload.activity } : item);
+            return { ...message, activities: next };
+          }));
+        }
+        if (payload.type === "title" && typeof payload.title === "string") {
+          setItems((current) =>
+            current.map((item) =>
+              item.id === id ? { ...item, title: payload.title } : item,
+            ),
+          );
+        }
+        if (payload.type === "error") throw new Error(payload.message);
+      };
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const events = buffer.split("\n\n");
         buffer = events.pop();
-        for (const line of events) {
-          const dataLine = line
-            .split("\n")
-            .find((entry) => entry.startsWith("data: "));
-          if (!dataLine) continue;
-          const payload = JSON.parse(dataLine.slice(6));
-          if (payload.type === "delta") {
-            answer += payload.text;
-            setMessages((current) =>
-              current.map((message) =>
-                message.id === "stream"
-                  ? { ...message, content: answer }
-                  : message,
-              ),
-            );
-          }
-          if (payload.type === "activity" && payload.activity) {
-            setMessages((current) => current.map((message) => {
-              if (message.id !== "stream") return message;
-              const activities = message.activities || [];
-              const previous = activities.findIndex((item) => item.id === payload.activity.id);
-              const next = previous === -1 ? [...activities, payload.activity] : activities.map((item, index) => index === previous ? { ...item, ...payload.activity } : item);
-              return { ...message, activities: next };
-            }));
-          }
-          if (payload.type === "title" && typeof payload.title === "string") {
-            setItems((current) =>
-              current.map((item) =>
-                item.id === id ? { ...item, title: payload.title } : item,
-              ),
-            );
-          }
-          if (payload.type === "error") throw new Error(payload.message);
-        }
+        for (const rawEvent of events) processEvent(rawEvent);
       }
+      // A server or proxy may close immediately after its final SSE event,
+      // without the trailing blank line. Render that final buffered event too.
+      if (buffer.trim()) processEvent(buffer);
 
       setMessages((current) =>
         current.map((message) =>
@@ -1066,7 +1147,6 @@ function App() {
               {group.items.map((item) => (
                 <div
                   className={`conversation ${active === item.id ? "active" : ""}`}
-                  onClick={() => open(item.id)}
                   key={item.id}
                 >
                   {renaming === item.id ? (
@@ -1075,7 +1155,6 @@ function App() {
                       value={renameValue}
                       autoFocus
                       maxLength={80}
-                      onClick={(event) => event.stopPropagation()}
                       onChange={(event) => setRenameValue(event.target.value)}
                       onBlur={commitRename}
                       onKeyDown={(event) => {
@@ -1085,12 +1164,20 @@ function App() {
                     />
                   ) : (
                     <>
-                      <span>{item.title}</span>
+                      {/* 标题本身就是按钮，键盘可聚焦 —— 操作区的 :focus-within 才真的有意义 */}
+                      <button
+                        type="button"
+                        className="conversation-open"
+                        onClick={() => open(item.id)}
+                        aria-current={active === item.id ? "true" : undefined}
+                      >
+                        {item.title}
+                      </button>
                       <div className="conversation-actions">
                         <button
                           type="button"
-                          onClick={(event) => startRename(item, event)}
-                          aria-label="重命名"
+                          onClick={() => startRename(item)}
+                          aria-label={`重命名「${item.title}」`}
                           title="重命名"
                         >
                           <IconPencil />
@@ -1098,11 +1185,8 @@ function App() {
                         <button
                           type="button"
                           className="danger"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setPendingDelete(item);
-                          }}
-                          aria-label="删除"
+                          onClick={() => setPendingDelete(item)}
+                          aria-label={`删除「${item.title}」`}
                           title="删除"
                         >
                           <IconTrash />
@@ -1187,14 +1271,16 @@ function App() {
                       <div className="bubble">{message.content}</div>
                     ) : (
                       <div className="answer">
-                        <ActivityTrail activities={message.activities} />
                         <Markdown text={message.content} />
-                        {message.id === "stream" && message.content && <span className="typing-dots" aria-label="正在生成"><i /><i /><i /></span>}
                       </div>
                     )}
                   </div>
-                  {message.id !== "stream" && (
-                    <div className="message-tools">
+                  {/* 槽位常驻且高度固定：流式时装状态指示，结束后换成复制键。
+                      内容替换而不是增删元素，所以回复正文的位置全程不动。 */}
+                  <div className="message-tools">
+                    {message.id === "stream" ? (
+                      <StreamStatus activities={message.activities} />
+                    ) : (
                       <button
                         type="button"
                         onClick={() => copyMessage(message)}
@@ -1203,8 +1289,8 @@ function App() {
                       >
                         {copied === message.id ? <IconCheck /> : <IconCopy />}
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </article>
               ))
             )}
@@ -1214,6 +1300,44 @@ function App() {
         <div className="composer-zone">
           <div className="composer-inner">
             {error && <div className="error composer-error">{error}</div>}
+
+            <div className="tool-row">
+              <div className="tool-item">
+                <button
+                  type="button"
+                  className={`tool-button ${calendarMode !== "auto" ? calendarMode : ""}`}
+                  onClick={() =>
+                    setOpenToolMenu((current) =>
+                      current === "calendar" ? null : "calendar",
+                    )
+                  }
+                  title={`Calendar · ${TOOL_MODES.find((mode) => mode.value === calendarMode).label}`}
+                  aria-label="Calendar 工具设置"
+                >
+                  <IconCalendar />
+                </button>
+                {openToolMenu === "calendar" && (
+                  <ToolMenu
+                    options={TOOL_MODES}
+                    value={calendarMode}
+                    onChange={(value) => {
+                      setCalendarMode(value);
+                      setOpenToolMenu(null);
+                    }}
+                    onClose={() => setOpenToolMenu(null)}
+                  />
+                )}
+              </div>
+              <button
+                type="button"
+                className="tool-button disabled"
+                disabled
+                title="联网搜索（即将支持）"
+                aria-label="联网搜索（即将支持）"
+              >
+                <IconGlobe />
+              </button>
+            </div>
 
             <form className="composer" onSubmit={send}>
               <textarea

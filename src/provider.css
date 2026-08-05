@@ -145,17 +145,21 @@
   line-height: 1.7;
 }
 
+/* 吸底的「添加配置」用的是 margin-top:auto，内容撑满时它会归零，
+   所以最小间距由这里保证（flex 容器里外边距不会合并） */
+.profile-list,
+.empty-profile,
 .list-error {
-  margin-top: 12px;
+  margin-bottom: 12px;
 }
 
+/* margin-top 交给 styles.css 的 .add-profile（auto 吸底），这里只留最小间距 */
 .add-profile {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   width: 100%;
-  margin-top: 12px;
   padding: 12px;
   border-radius: var(--r-md);
   background: var(--surface-2);
@@ -266,12 +270,60 @@
   margin-top: 18px;
 }
 
-.model-catalog-action { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 10px; min-height: 72px; margin-top: 2px; color: var(--text-2); font-size: 12px; }
-.catalog-button { border: 0; border-radius: 9px; padding: 8px 11px; background: var(--surface-strong); color: var(--text); cursor: pointer; font: inherit; white-space: nowrap; }
-.catalog-button:disabled { opacity: .55; cursor: default; }
-.model-options { grid-column: 1 / -1; display: flex; gap: 6px; min-height: 30px; overflow-x: auto; scrollbar-width: thin; }
-.model-options button { flex: 0 0 auto; max-width: 230px; min-height: 30px; padding: 0 10px; overflow: hidden; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-2); font-family: var(--font-mono); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; transition: background var(--fast), color var(--fast); }
-.model-options button:hover, .model-options button.selected { background: var(--surface-3); color: var(--text); }
+/* min-height 固定：模型列表拉回来前后，保存按钮的位置不变 */
+.model-catalog-action {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 10px;
+  min-height: 72px;
+  margin-top: 2px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.catalog-button {
+  padding: 8px 11px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  white-space: nowrap;
+  transition: background var(--fast);
+}
+.catalog-button:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.catalog-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.model-options {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 6px;
+  min-height: 30px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.model-options button {
+  flex: 0 0 auto;
+  max-width: 230px;
+  min-height: 30px;
+  padding: 0 10px;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: background var(--fast), color var(--fast);
+}
+.model-options button:hover,
+.model-options button.selected {
+  background: var(--surface-3);
+  color: var(--text);
+}
 
 /* 报错固定在按钮上方，出现时不改变面板高度感知 */
 .key-form .error {
